@@ -1,0 +1,39 @@
+#######################################
+# Syntax Coloring Map GeekShield
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+MouldKing40		KEYWORD1
+MouldKing60		KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+setInstanceNumber			KEYWORD2
+setImmediateUpdates         KEYWORD2
+begin                       KEYWORD2
+connect                     KEYWORD2
+disconnect                  KEYWORD2
+applyUpdates                KEYWORD2
+updateMotorOutput           KEYWORD2
+
+#######################################
+# Structures (KEYWORD3)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+MODULE_1			LITERAL1
+MODULE_2			LITERAL1
+MODULE_3			LITERAL1
+CHANNEL_A			LITERAL1
+CHANNEL_B			LITERAL1
+CHANNEL_C			LITERAL1
+CHANNEL_D			LITERAL1
+CHANNEL_E			LITERAL1
+CHANNEL_F			LITERAL1
