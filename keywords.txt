@@ -1,5 +1,5 @@
 #######################################
-# Syntax Coloring Map GeekShield
+# Syntax Coloring Map MouldKingino
 #######################################
 
 #######################################
@@ -19,6 +19,8 @@ connect                     KEYWORD2
 disconnect                  KEYWORD2
 applyUpdates                KEYWORD2
 updateMotorOutput           KEYWORD2
+getChannelCount             KEYWORD2
+resetChannels               KEYWORD2
 
 #######################################
 # Structures (KEYWORD3)

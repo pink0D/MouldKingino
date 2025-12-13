@@ -10,10 +10,11 @@
 #include "MKBLEAdvertiser.h"
 #include "MKCryptoHelper.h"
 
-#include <Arduino.h>
+#ifdef MK_IMPL_BTSTACK
+#include <btstack.h>
+#endif
 
-
-uint8_t MKSeedArray[] = 
+static const uint8_t MKSeedArray[] = 
     {
         0xC1, 
         0xC2, 
@@ -22,14 +23,39 @@ uint8_t MKSeedArray[] =
         0xC5, 
     };
 
- uint8_t MKHeaderArray[] =
+ static const uint8_t MKHeaderArray[] =
     {
         0x71,   // 0x71 (113)
         0x0f,   // 0x0f (15)
         0x55,   // 0x55 (85)
     };
 
-  
+static const int encryptedHeaderOffset = 15;
+static const int encryptedPacketLength = 24;
+
+static const uint8_t CTXValue1 = 0x3f;
+static const uint8_t CTXValue2 = 0x25;
+
+static const uint16_t manufacturer_id = 0xFFF0;
+
+int MKBLEAdvertiser::encryptPayload(uint8_t *payload, int payloadLen, uint8_t *destination, int maxlen) {
+
+    if (maxlen < encryptedPacketLength) {
+        Serial.println("WARNING: MKBLEAdvertiser::encryptPayload destination buffer too short");
+        return 0;
+    }
+
+    int encrypted_payload_len = MKCryptoHelper::encryptPayload(MKSeedArray, sizeof(MKSeedArray), MKHeaderArray, sizeof(MKHeaderArray), 
+            payload, payloadLen, encryptedHeaderOffset, CTXValue1, CTXValue2, destination, encryptedPacketLength);
+
+    for (int index = encrypted_payload_len; index < encryptedPacketLength; index++)
+    {
+        destination[index] = (uint8_t)(index + 1);
+    }
+
+    return encryptedPacketLength;
+}
+
 int MKBLEAdvertiser::advertisingCount = 0;
 
 MKBLEAdvertiser::MKBLEAdvertiser() {
@@ -37,44 +63,22 @@ MKBLEAdvertiser::MKBLEAdvertiser() {
     // NimBLE supports only one advertisement, so only one MKBLEAdvertiser can be active
     // this check disables any other MKBLEAdvertiser if more objects are instantiated
     if (advertisingCount > 0) {
-        advertisementDisabled = true;
+        advertisingDisabled = true;
     }
 
     advertisingCount++;
 }
 
-void MKBLEAdvertiser::begin(uint16_t _manufacturer_id , 
-            const uint8_t* _seedArray, int _seedArraySize, 
-            const uint8_t* _headerArray , int _headerArraySize,
-            uint8_t _CTXValue1, uint8_t _CTXValue2, 
-            int _encryptedHeaderOffset, int _encryptedPacketLength) {
+void MKBLEAdvertiser::begin() {
 
-    if (advertisementDisabled) {
+    if (advertisingDisabled) {
         Serial.println("WARNING: current platform does not allow multiple BLE Advertisements");
     }
 
-    this->manufacturer_id = _manufacturer_id;
-    this->encryptedHeaderOffset = _encryptedHeaderOffset;
-    this->encryptedPacketLength = _encryptedPacketLength;
-    this->CTXValue1 = _CTXValue1;
-    this->CTXValue2 = _CTXValue2;
-
-    // copy default seed
-    if ( (_seedArray == nullptr) || (_seedArraySize == 0) ) {
-        this->seedArray = MKSeedArray;
-        this->seedArraySize = sizeof(MKSeedArray);
-    } else {
-        this->seedArray = _seedArray;
-        this->seedArraySize = _seedArraySize;
-    }
-
-    // copy default header
-    if ( (_headerArray == nullptr) || (_headerArraySize == 0) ) {
-        this->headerArray = MKHeaderArray;
-        this->headerArraySize = sizeof(MKHeaderArray);
-    } else {
-        this->headerArray = _headerArray;
-        this->headerArraySize = _headerArraySize;
+    adv_mutex = xSemaphoreCreateMutex();
+    if (adv_mutex == nullptr) {
+        Serial.println("WARNING: MKBLEAdvertiser::begin failed to create mutex");
+        advertisingDisabled = true;
     }
 }
 
@@ -85,85 +89,156 @@ void MKBLEAdvertiser::connect(int connect_duration) {
     int payload_len = getConnectPayload(payload, sizeof(payload));
 
     if (payload_len > 0) {
-        updateAdvertisement(payload, payload_len);
+        startAdvertising(payload, payload_len);
     }
 
     delay(connect_duration);
     isConnected = true;
+
+    setDataUpdated();
+    update(); // update advertisement with default channel data 
 }
 
 void MKBLEAdvertiser::disconnect() {
     
-    enable_adv = false;
-    isConnected = false;
-
-    NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
-    adv->stop();
+    stopAdvertising();    
 }
 
 void MKBLEAdvertiser::update() {
-    if (!isConnected)
+    if ( (!isConnected) || (!dataUpdated) )
         return;
 
     uint8_t payload[32];
     int payload_len = getUpdatePayload(payload, sizeof(payload));
     
     if (payload_len > 0) {
-        updateAdvertisement(payload, payload_len);
+        startAdvertising(payload, payload_len);
     }
+
+    dataUpdated = false;
 }
 
 
 // encrypts payload and updates BLE advertisement    
-void MKBLEAdvertiser::updateAdvertisement(uint8_t *payload, int payload_len) {
-    if ( (advertisementDisabled) || (payload_len<=0) ) {
+void MKBLEAdvertiser::startAdvertising(uint8_t *payload, int payloadLen) {
+
+    if ( (advertisingDisabled) || (payloadLen<=0) ) {
         return;
     }
-
+   
     uint8_t encrypted_payload[32];
-    int encrypted_payload_len = encryptPayload(payload, payload_len, encrypted_payload, sizeof(encrypted_payload));
+    int encrypted_payload_len = encryptPayload(payload, payloadLen, encrypted_payload, sizeof(encrypted_payload));
 
+#ifdef MK_IMPL_NIMBLE
     adv_data_len = encrypted_payload_len + 2;
+#endif
+
+#ifdef MK_IMPL_BTSTACK
+    adv_data_len = encrypted_payload_len + 4 + 3;
+#endif
+
 
     // check that encrypted payload together with headers does not exceed adv data buffer
     if (adv_data_len > sizeof(adv_data)) {
-        Serial.println("WARNING: MKBLEAdvertiser::updateAdvertisement adv_data buffer too short");
+        Serial.println("WARNING: MKBLEAdvertiser::startAdvertising adv_data buffer too short");
         return;
     }
 
+#ifdef MK_IMPL_NIMBLE
     memcpy(&adv_data[0], &manufacturer_id, sizeof(manufacturer_id));    // company id
     memcpy(&adv_data[2], encrypted_payload, encrypted_payload_len);     // payload
+#endif
 
-    enable_adv = true;
+#ifdef MK_IMPL_BTSTACK
 
-    
-    NimBLEAdvertising *NimBLE_adv = NimBLEDevice::getAdvertising();   
+    xSemaphoreTake(adv_mutex, portMAX_DELAY);
 
-    NimBLE_adv_data.clearData();
-    NimBLE_adv_data.setFlags(0x06);
-    NimBLE_adv_data.setManufacturerData(adv_data, adv_data_len);
-    
-    NimBLE_adv->setAdvertisementData(NimBLE_adv_data);
-    NimBLE_adv->setAdvertisingInterval(32);
+    // Flags
+    adv_data[0] = 0x02;
+    adv_data[1] = 0x01;
+    adv_data[2] = 0x06;
 
-    NimBLE_adv->start();
+    // Manufacturer Data
+    adv_data[3] = (uint8_t) encrypted_payload_len + 3;                  // MF Data length 
+    adv_data[4] = 0xFF;                                                 // Type = Manufacturer Data
+    memcpy(&adv_data[5], &manufacturer_id, sizeof(manufacturer_id));    // company id
+    memcpy(&adv_data[7], encrypted_payload, encrypted_payload_len);     // payload
 
+    xSemaphoreGive(adv_mutex);
+
+#endif
+
+    adv_start = true;
+    updateBLEAdvertisingState();
 }
 
-int MKBLEAdvertiser::encryptPayload(uint8_t *payload, int payload_len, uint8_t *destination, int maxlen) {
+void MKBLEAdvertiser::stopAdvertising() {
 
-    if (maxlen < encryptedPacketLength) {
-        Serial.println("WARNING: MKBLEAdvertiser::encryptPayload destination buffer too short");
-        return 0;
-    }
+    isConnected = false;
 
-    int encrypted_payload_len = MKCryptoHelper::encryptPayload(seedArray, seedArraySize, headerArray, headerArraySize, 
-            payload, payload_len, encryptedHeaderOffset, CTXValue1, CTXValue2, destination, encryptedPacketLength);
-
-    for (int index = encrypted_payload_len; index < encryptedPacketLength; index++)
-    {
-        destination[index] = (uint8_t)(index + 1);
-    }
-
-    return encryptedPacketLength;
+    adv_start = false;
+    updateBLEAdvertisingState();
 }
+
+
+#ifdef MK_IMPL_NIMBLE
+
+void MKBLEAdvertiser::updateBLEAdvertisingState() {
+
+    if (adv_start) {
+
+        NimBLEAdvertising *NimBLE_adv = NimBLEDevice::getAdvertising();   
+
+        NimBLE_adv_data.clearData();
+        NimBLE_adv_data.setFlags(0x06);
+        NimBLE_adv_data.setManufacturerData(adv_data, adv_data_len);
+        
+        NimBLE_adv->setAdvertisementData(NimBLE_adv_data);
+        NimBLE_adv->setAdvertisingInterval(32);
+
+        NimBLE_adv->start();
+
+    } else {
+
+        NimBLEAdvertising *NimBLE_adv = NimBLEDevice::getAdvertising();
+        NimBLE_adv->stop();
+    }
+}
+
+#endif
+
+#ifdef MK_IMPL_BTSTACK
+
+static btstack_context_callback_registration_t update_callback_registration;
+
+void MKBLEAdvertiser::updateBLEAdvertisingState() {
+    update_callback_registration.callback = &btstackCallback;
+    update_callback_registration.context = this;
+    btstack_run_loop_execute_on_main_thread(&update_callback_registration);    
+}
+
+void MKBLEAdvertiser::btstackCallback(void *context) {
+    static_cast<MKBLEAdvertiser*>(context)->btstackUpdateAdvertisingState();
+}
+
+void MKBLEAdvertiser::btstackUpdateAdvertisingState() {
+    if (adv_start) {
+
+        xSemaphoreTake(adv_mutex, portMAX_DELAY);
+
+        uint8_t adv_type = 0;
+        bd_addr_t null_addr;
+        memset(null_addr, 0, 6);
+
+        gap_advertisements_set_params(32, 32, adv_type, 0, null_addr, 0x07, 0x00);
+        gap_advertisements_set_data(adv_data_len, adv_data);
+        gap_advertisements_enable(1);
+
+        xSemaphoreGive(adv_mutex);
+
+    } else {
+        gap_advertisements_enable(0);
+    }
+}
+
+#endif

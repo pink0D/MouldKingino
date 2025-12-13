@@ -12,17 +12,31 @@
 
 #include <Arduino.h>
 
-#include <NimBLEDevice.h>
-#include <NimBLEAdvertisementData.h>
+// auto detect Bluetooth library
+#if __has_include(<Bluepad32.h>)
+    #define MK_IMPL_BTSTACK
+#elif __has_include(<btstack.h>)
+    #define MK_IMPL_BTSTACK
+#elif __has_include(<NimBLEDevice.h>)
+    #define MK_IMPL_NIMBLE
+#else
+    #error No supported Bluetooth libraries found
+#endif
 
+// NimBLE includes
+#ifdef MK_IMPL_NIMBLE
+    #include <NimBLEDevice.h>
+    #include <NimBLEAdvertisementData.h>
+#endif
+
+// BTStack includes
+#ifdef MK_IMPL_BTSTACK
+    #include "freertos/semphr.h"
+#endif
 
 class MKBLEAdvertiser {
     public:
-        void begin(uint16_t _manufacturer_id, 
-            const uint8_t* _seedArray, int _seedArraySize, 
-            const uint8_t* _headerArray, int _headerArraySize,
-            uint8_t _CTXValue1, uint8_t _CTXValue2, 
-            int _encryptedHeaderOffset, int _encryptedPacketLength);
+        void begin();
 
         virtual void setInstanceNumber(int instanceNum) = 0;
 
@@ -30,44 +44,55 @@ class MKBLEAdvertiser {
         void disconnect();
         void update();
 
-        virtual void setChannelValue(int instance, int channel, double normalized_value) = 0;
+        virtual void setChannelValue(int instance, int channel, double normalizedValue) = 0;
+        virtual void resetChannels(int instance) = 0;
+        virtual int getChannelCount() = 0;
 
     protected:
         MKBLEAdvertiser();        
 
         // prepares unencrypted payload and returns its size
-        virtual int getConnectPayload(uint8_t *out_payload, int out_maxlen) = 0;
-        virtual int getUpdatePayload(uint8_t *out_payload, int out_maxlen) = 0;
+        virtual int getConnectPayload(uint8_t *outPayload, int outMaxLen) = 0;
+        virtual int getUpdatePayload(uint8_t *outPayload, int outMaxLen) = 0;
+
+        // sets updateNeeded flag
+        void setDataUpdated() {
+          dataUpdated = true;  
+        };
 
     private:
         // encrypts the payload and updates BLE advertisement
-        void updateAdvertisement(uint8_t *payload, int payload_len);
+        void startAdvertising(uint8_t *payload, int payloadLen);
+        void stopAdvertising();
 
         // module specific encrypt function
-        int encryptPayload(uint8_t *payload, int payload_len, uint8_t *destination, int maxlen);
+        int encryptPayload(uint8_t *payload, int payloadLen, uint8_t *destination, int maxlen);
 
         static int advertisingCount;
-        bool advertisementDisabled = false;
+        bool advertisingDisabled = false;
 
+        bool dataUpdated = false;
         bool isConnected = false;
 
-        NimBLEAdvertisementData NimBLE_adv_data; 
-
-        uint16_t manufacturer_id;
-
+        // raw advertisement data
+        bool adv_start = false;
         uint8_t adv_data[32];
         int adv_data_len;
-        bool enable_adv = false;
         
-        int encryptedHeaderOffset;
-        int encryptedPacketLength;
+        // implementation specific & thread safe BLE API invocation
+        void updateBLEAdvertisingState();
 
-        const uint8_t* seedArray;
-        int seedArraySize;
-        const uint8_t* headerArray;
-        int headerArraySize;
-        uint8_t CTXValue1;
-        uint8_t CTXValue2;
+        // library specific BLE implementation
+    #ifdef MK_IMPL_NIMBLE
+        NimBLEAdvertisementData NimBLE_adv_data; 
+    #endif
+
+    #ifdef MK_IMPL_BTSTACK
+        SemaphoreHandle_t adv_mutex;
+        static void btstackCallback(void *context);
+        void btstackUpdateAdvertisingState();
+    #endif
+
 };
 
 #endif

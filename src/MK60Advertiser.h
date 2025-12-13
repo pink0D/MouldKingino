@@ -20,20 +20,25 @@ class MK60Advertiser : public MKBLEAdvertiser {
             return new MK60Advertiser(instanceNum);
         };
 
-        virtual void setInstanceNumber(int instanceNum);
-        virtual void setChannelValue(int instance, int channel, double normalized_value);
+        static void releaseAdvertiser(MK60Advertiser* adv) {
+            delete adv;
+        };
 
-        virtual int getConnectPayload(uint8_t *out_payload, int maxlen);
-        virtual int getUpdatePayload(uint8_t *out_payload, int maxlen);
+        virtual void setInstanceNumber(int instanceNum);
+
+        virtual void setChannelValue(int instance, int channel, double normalizedValue);
+        virtual void resetChannels(int instance);
+        virtual int getChannelCount() { return 6; };
+
+    protected:
+        virtual int getConnectPayload(uint8_t *outPayload, int outMaxLen);
+        virtual int getUpdatePayload(uint8_t *outPayload, int outMaxLen);
 
     private:
         MK60Advertiser(int instanceNum);
+        void initChannelData(int instanceNum);
 
-        uint8_t *connectData;
-        int connectDataSize;
-
-        uint8_t *channelData;
-        int channelDataSize;
+        uint8_t channelData[10];
 };
 
 #endif

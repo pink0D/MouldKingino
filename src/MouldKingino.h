@@ -33,25 +33,22 @@ class MKModule {
             this->immediateUpdate = immediateUpdate;
         };
 
+        ~MKModule() {
+            AdvertiserClass::releaseAdvertiser(this->advertiser);
+        };
+
         void setInstanceNumber(int instanceNum) {
             this->instanceNum = instanceNum;
             this->advertiser->setInstanceNumber(instanceNum);
-        }
+        };
 
         void setImmediateUpdates(bool immediateUpdate) {
             this->immediateUpdate = immediateUpdate;
-        }
+        };
 
-        virtual void begin(uint16_t manufacturer_id = 0xFFF0, 
-            const uint8_t* seedArray = nullptr, int seedArraySize = 0, 
-            const uint8_t* headerArray = nullptr, int headerArraySize = 0,
-            uint8_t CTXValue1 = 0x3f, uint8_t CTXValue2 = 0x25, 
-            int encryptedHeaderOffset = 15, int encryptedPacketLength = 24) {
-
-            advertiser->begin(manufacturer_id, 
-                seedArray, seedArraySize, headerArray, headerArraySize,
-                CTXValue1, CTXValue2, encryptedHeaderOffset, encryptedPacketLength);
-        }
+        virtual void begin() {
+            advertiser->begin();
+        };
 
         void connect(int connect_duration = 1000) {
             advertiser->connect(connect_duration);
@@ -65,7 +62,11 @@ class MKModule {
             advertiser->update();
         };
 
-        void updateMotorOutput(int channel, double normalized_value) {
+        int getChannelCount() {
+            return advertiser->getChannelCount();
+        };
+
+        virtual void updateMotorOutput(int channel, double normalized_value) {
             
             advertiser->setChannelValue(instanceNum, channel, normalized_value);
 
@@ -73,6 +74,10 @@ class MKModule {
                 applyUpdates();
         };
 
+        void resetChannels() {
+            advertiser->resetChannels(instanceNum);
+            applyUpdates();
+        };        
 
     private:
         int instanceNum = 0;

@@ -9,28 +9,24 @@
 
 #include "MK40Advertiser.h"
 
-uint8_t MK40_Telegram_Connect[] = { 0xAD, 0x7B, 0xA7, 0x80, 0x80, 0x80, 0x4F, 0x52 };
-uint8_t MK40_Telegram_Base[] = { 0x7D, 0x7B, 0xA7, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x82 };
+static const uint8_t MK40_Telegram_Connect[] = { 0xAD, 0x7B, 0xA7, 0x80, 0x80, 0x80, 0x4F, 0x52 };
+static const uint8_t MK40_Telegram_Base[] = { 0x7D, 0x7B, 0xA7, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x82 };
 
 MK40Advertiser::MK40Advertiser() {
 
-    connectData = new uint8_t[sizeof(MK40_Telegram_Connect)];
-    memcpy(connectData, MK40_Telegram_Connect, sizeof(MK40_Telegram_Connect));
-
-    channelData = new uint8_t[sizeof(MK40_Telegram_Base)];
-    memcpy(channelData, MK40_Telegram_Base, sizeof(MK40_Telegram_Base));
-}
-
-void MK40Advertiser::setChannelValue(int instance, int channel, double normalized_value) {
-
-    if ( (channel < 0) || (channel > 3) ) {
-        Serial.println("WARNING: invalid channel for MK 4.0");
+    if (sizeof(channelData) != sizeof(MK40_Telegram_Base) ) {
+        Serial.println("WARNING: invalid sizeof(channelData) for MK 4.0");
         return;
     }
 
+    memcpy(channelData, MK40_Telegram_Base, sizeof(MK40_Telegram_Base));
+}
+
+void MK40Advertiser::setChannelValue(int instance, int channel, double normalizedValue) {
+   
     uint8_t bValue = 0x08; // zero value by default
 
-    double abs_value = abs(normalized_value);
+    double abs_value = abs(normalizedValue);
     if (abs_value > 0.875)
         bValue = 7;
     else if (abs_value > 0.750)
@@ -46,39 +42,68 @@ void MK40Advertiser::setChannelValue(int instance, int channel, double normalize
     else if (abs_value > 0.125)
         bValue = 1;
 
-    if (normalized_value < -0.125)
+    if (normalizedValue < -0.125)
         bValue += 8;
 
+    setChannelRawValue(instance, channel, bValue);
+}
+
+void MK40Advertiser::setChannelRawValue(int instance, int channel, uint8_t rawValue) {
+
+    if ( (instance < 0) || (instance > 2) ) {
+        Serial.println("WARNING: invalid instance for MK 4.0");
+        return;
+    }
+
+    if ( (channel < 0) || (channel > 3) ) {
+        Serial.println("WARNING: invalid channel for MK 4.0");
+        return;
+    }    
+
     int offset = 3 + 2 * instance;
+    uint8_t oldValue0 = channelData[offset+0];
+    uint8_t oldValue1 = channelData[offset+1];
 
     switch (channel) {
         case 0:
-            channelData[offset+0] = (bValue << 4) + (channelData[offset+0] & 0x0F);
+            channelData[offset+0] = (rawValue << 4) + (channelData[offset+0] & 0x0F);
             break;
         case 1:
-            channelData[offset+0] = (channelData[offset+0] & 0xF0) + bValue;
+            channelData[offset+0] = (channelData[offset+0] & 0xF0) + rawValue;
             break;
         case 2:
-            channelData[offset+1] = (bValue << 4) + (channelData[offset+1] & 0x0F);
+            channelData[offset+1] = (rawValue << 4) + (channelData[offset+1] & 0x0F);
             break;
         case 3:
-            channelData[offset+1] = (channelData[offset+1] & 0xF0) + bValue;
+            channelData[offset+1] = (channelData[offset+1] & 0xF0) + rawValue;
             break;
+    }
+
+    if ( (oldValue0 != channelData[offset+0]) || (oldValue1 != channelData[offset+1]) )
+        setDataUpdated();
+
+}
+
+void MK40Advertiser::resetChannels(int instance) {
+    for (int i=0; i<getChannelCount(); i++) {
+        setChannelRawValue(instance, i, 0x88);
     }
 }
 
-int MK40Advertiser::getConnectPayload(uint8_t *out_payload, int out_maxlen) {
-    if (out_maxlen < sizeof(MK40_Telegram_Connect))
+int MK40Advertiser::getConnectPayload(uint8_t *outPayload, int outMaxLen) {
+
+    if (outMaxLen < sizeof(MK40_Telegram_Connect))
         return 0;
 
-    memcpy(out_payload, connectData, sizeof(MK40_Telegram_Connect));
+    memcpy(outPayload, MK40_Telegram_Connect, sizeof(MK40_Telegram_Connect));
     return sizeof(MK40_Telegram_Connect);
 }
 
-int MK40Advertiser::getUpdatePayload(uint8_t *out_payload, int out_maxlen) {
-    if (out_maxlen < sizeof(MK40_Telegram_Base))
+int MK40Advertiser::getUpdatePayload(uint8_t *outPayload, int outMaxLen) {
+
+    if (outMaxLen < sizeof(MK40_Telegram_Base))
         return 0;
 
-    memcpy(out_payload, channelData, sizeof(MK40_Telegram_Base));
+    memcpy(outPayload, channelData, sizeof(MK40_Telegram_Base));
     return sizeof(MK40_Telegram_Base);
 }

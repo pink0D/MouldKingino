@@ -23,19 +23,26 @@ class MK40Advertiser : public MKBLEAdvertiser {
             return &instance;
         };
 
-        virtual void setChannelValue(int instance, int channel, double normalized_value);
+        static void releaseAdvertiser(MK40Advertiser* adv) {}; // do nothing
 
-        virtual int getConnectPayload(uint8_t *out_payload, int maxlen);
-        virtual int getUpdatePayload(uint8_t *out_payload, int maxlen);
+        virtual void setChannelValue(int instance, int channel, double normalizedValue);
+        virtual void resetChannels(int instance);
+        virtual int getChannelCount() { return 4; };
 
         // MK 4.0 advertiser is common for all instances
         virtual void setInstanceNumber(int instanceNum) {};
 
+    protected:
+        virtual int getConnectPayload(uint8_t *outPayload, int outMaxLen);
+        virtual int getUpdatePayload(uint8_t *outPayload, int outMaxLen);
+
+
     private:
         MK40Advertiser();
 
-        uint8_t *connectData;
-        uint8_t *channelData;
+        void setChannelRawValue(int instance, int channel, uint8_t rawValue);
+
+        uint8_t channelData[10];
 };
 
 #endif

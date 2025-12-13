@@ -19,12 +19,12 @@ class MKCryptoHelper {
 
     private:
 
-        static uint8_t reverse_byte(uint8_t value) {
+        static uint8_t reverseByte(uint8_t value) {
             value = (uint8_t)(((value * 0x0802U & 0x22110U) | (value * 0x8020U & 0x88440U)) * 0x10101U >> 16);
             return value;
         };
 
-        static uint16_t reverse_word(uint16_t value)
+        static uint16_t reverseWord(uint16_t value)
         {
             // Swap odd and even bits
             value = (uint16_t)(((value & 0xAAAA) >> 1) | ((value & 0x5555) << 1));
@@ -37,7 +37,7 @@ class MKCryptoHelper {
             return value;
         };
 
-        static uint16_t CheckCRC16(const uint8_t* array1, int array1_len, const uint8_t* array2, int array2_len)
+        static uint16_t checkCRC16(const uint8_t* array1, int array1_len, const uint8_t* array2, int array2_len)
         {
             int result = 0xFFFF;
 
@@ -54,7 +54,7 @@ class MKCryptoHelper {
             // Process array2 in forward order, with bit inversion
             for (int i = 0; i < array2_len; i++)
             {
-                result ^= reverse_byte(array2[i]) << 8;
+                result ^= reverseByte(array2[i]) << 8;
                 for (int j = 0; j < 8; j++)
                 {
                     result = (result & 0x8000) == 0 ? result << 1 : (result << 1) ^ 0x1021;
@@ -62,10 +62,10 @@ class MKCryptoHelper {
             }
 
             // Final inversion and XOR
-            return (uint16_t)(reverse_word((uint16_t)result) ^ 0xFFFF);
+            return (uint16_t)(reverseWord((uint16_t)result) ^ 0xFFFF);
         };
 
-        static void WhiteningInit(uint8_t val, uint8_t* ctx) {
+        static void whiteningInit(uint8_t val, uint8_t* ctx) {
             ctx[0] = 1;
             ctx[1] = (uint8_t)((val >> 5) & 1);
             ctx[2] = (uint8_t)((val >> 4) & 1);
@@ -75,7 +75,7 @@ class MKCryptoHelper {
             ctx[6] = (uint8_t)(val & 1);
         }
 
-        static uint8_t WhiteningOutput(uint8_t* ctx) {
+        static uint8_t whiteningOutput(uint8_t* ctx) {
             uint8_t value_3 = ctx[3];
             uint8_t value_6 = ctx[6];
             ctx[3] = ctx[2];
@@ -88,7 +88,7 @@ class MKCryptoHelper {
             return ctx[0];
         }
 
-        static void WhiteningEncode(uint8_t* data, int dataStartIndex, int len, uint8_t* ctx)
+        static void whiteningEncode(uint8_t* data, int dataStartIndex, int len, uint8_t* ctx)
         {
             for (int index = 0; index < len; index++)
             {
@@ -96,14 +96,14 @@ class MKCryptoHelper {
                 int currentResult = 0;
                 for (int bitIndex = 0; bitIndex < 8; bitIndex++)
                 {
-                    uint8_t uVar2 = WhiteningOutput(ctx);
+                    uint8_t uVar2 = whiteningOutput(ctx);
                     currentResult |= ((uVar2 ^ ((currentByte >> bitIndex) & 1)) << bitIndex);
                 }
                 data[dataStartIndex + index] = (uint8_t)currentResult;
             }
         }
 
-        static void debug_print(const char* title, const uint8_t* data, int data_len) {
+        static void debugPrint(const char* title, const uint8_t* data, int data_len) {
             Serial.printf("\r\n%s\r\n", title);
             for (int i = 0; i < data_len; i++)
                 Serial.printf("%02X ", data[i]);
@@ -140,7 +140,7 @@ class MKCryptoHelper {
             memcpy(&resultBuffer[headerOffset], header, headerLength);
 
             #ifdef CRYPTO_DEBUG_EXT                
-            debug_print("header", resultBuffer, resultBufferLength);
+            debugPrint("header", resultBuffer, resultBufferLength);
             #endif
 
             // Reverse-copy seed-array into resultBuffer after header
@@ -150,52 +150,52 @@ class MKCryptoHelper {
             }
 
             #ifdef CRYPTO_DEBUG_EXT                
-            debug_print("seed", resultBuffer, resultBufferLength);
+            debugPrint("seed", resultBuffer, resultBufferLength);
             #endif
 
             // Invert bytes of header and seed-array in resultBuffer
             for (int index = 0; index < headerLength + seedLength; index++)
             {
-                resultBuffer[headerOffset + index] = reverse_byte(resultBuffer[headerOffset + index]);
+                resultBuffer[headerOffset + index] = reverseByte(resultBuffer[headerOffset + index]);
             }
 
             #ifdef CRYPTO_DEBUG_EXT                
-            debug_print("invert", resultBuffer, resultBufferLength);
+            debugPrint("invert", resultBuffer, resultBufferLength);
             #endif
 
             // Copy data
             memcpy(&resultBuffer[dataOffset], data, dataLength);
 
             #ifdef CRYPTO_DEBUG_EXT                
-            debug_print("data", resultBuffer, resultBufferLength);
+            debugPrint("data", resultBuffer, resultBufferLength);
             #endif
 
             // Write checksum
-            uint16_t checksum = CheckCRC16(seed, seedLength, data, dataLength);
+            uint16_t checksum = checkCRC16(seed, seedLength, data, dataLength);
             memcpy(&resultBuffer[checksumOffset], &checksum, checksumLength);
 
             #ifdef CRYPTO_DEBUG                
-            debug_print("before whitening", resultBuffer, resultBufferLength);
+            debugPrint("before whitening", resultBuffer, resultBufferLength);
             #endif
 
             // Whitening
             uint8_t ctxArray1[7];
-            WhiteningInit(ctxValue1, ctxArray1);
-            WhiteningEncode(resultBuffer, seedOffset, seedLength + dataLength + checksumLength, ctxArray1);
+            whiteningInit(ctxValue1, ctxArray1);
+            whiteningEncode(resultBuffer, seedOffset, seedLength + dataLength + checksumLength, ctxArray1);
 
             uint8_t ctxArray2[7];
-            WhiteningInit(ctxValue2, ctxArray2);
-            WhiteningEncode(resultBuffer, 0, resultBufferLength, ctxArray2);
+            whiteningInit(ctxValue2, ctxArray2);
+            whiteningEncode(resultBuffer, 0, resultBufferLength, ctxArray2);
 
             #ifdef CRYPTO_DEBUG_EXT                
-            debug_print("after whitening", resultBuffer, resultBufferLength);
+            debugPrint("after whitening", resultBuffer, resultBufferLength);
             #endif
 
             // Copy result to rfPayload
             memcpy(&out_rfPayload[out_rfPayloadOffset], &resultBuffer[headerOffset], resultArrayLength);
 
             #ifdef CRYPTO_DEBUG                
-            debug_print("final", out_rfPayload, resultArrayLength);
+            debugPrint("final", out_rfPayload, resultArrayLength);
             #endif
 
             return resultArrayLength;
