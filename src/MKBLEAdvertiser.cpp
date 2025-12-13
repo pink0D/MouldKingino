@@ -75,11 +75,13 @@ void MKBLEAdvertiser::begin() {
         Serial.println("WARNING: current platform does not allow multiple BLE Advertisements");
     }
 
+#ifdef MK_IMPL_BTSTACK
     adv_mutex = xSemaphoreCreateMutex();
     if (adv_mutex == nullptr) {
         Serial.println("WARNING: MKBLEAdvertiser::begin failed to create mutex");
         advertisingDisabled = true;
     }
+#endif
 }
 
 void MKBLEAdvertiser::connect(int connect_duration) {
