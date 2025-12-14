@@ -86,8 +86,12 @@ void MK40Advertiser::setChannelRawValue(int instance, int channel, uint8_t rawVa
 
 void MK40Advertiser::resetChannels(int instance) {
     for (int i=0; i<getChannelCount(); i++) {
-        setChannelRawValue(instance, i, 0x88);
+        setChannelRawValue(instance, i, 0x08);
     }
+}
+
+void MK40Advertiser::setInstanceNumber(int instanceNum) {
+    resetChannels(instanceNum);
 }
 
 int MK40Advertiser::getConnectPayload(uint8_t *outPayload, int outMaxLen) {

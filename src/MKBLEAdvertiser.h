@@ -36,11 +36,11 @@
 
 class MKBLEAdvertiser {
     public:
-        void begin();
+        void begin() {}; // backward compatibilty
 
         virtual void setInstanceNumber(int instanceNum) = 0;
 
-        void connect(int _connect_duration);
+        void connect(int connect_duration);
         void disconnect();
         void update();
 
@@ -88,7 +88,9 @@ class MKBLEAdvertiser {
     #endif
 
     #ifdef MK_IMPL_BTSTACK
-        SemaphoreHandle_t adv_mutex;
+        SemaphoreHandle_t adv_mutex = nullptr;
+        uint8_t btstack_adv_data[32];
+        int btstack_adv_data_len;
         static void btstackCallback(void *context);
         void btstackUpdateAdvertisingState();
     #endif

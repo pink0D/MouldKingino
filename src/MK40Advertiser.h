@@ -30,7 +30,7 @@ class MK40Advertiser : public MKBLEAdvertiser {
         virtual int getChannelCount() { return 4; };
 
         // MK 4.0 advertiser is common for all instances
-        virtual void setInstanceNumber(int instanceNum) {};
+        virtual void setInstanceNumber(int instanceNum);
 
     protected:
         virtual int getConnectPayload(uint8_t *outPayload, int outMaxLen);

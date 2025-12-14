@@ -69,23 +69,32 @@ MKBLEAdvertiser::MKBLEAdvertiser() {
     advertisingCount++;
 }
 
-void MKBLEAdvertiser::begin() {
+void MKBLEAdvertiser::connect(int connect_duration) {
 
     if (advertisingDisabled) {
         Serial.println("WARNING: current platform does not allow multiple BLE Advertisements");
+        return;
     }
 
 #ifdef MK_IMPL_BTSTACK
-    adv_mutex = xSemaphoreCreateMutex();
+    if (adv_mutex == nullptr) {
+        adv_mutex = xSemaphoreCreateMutex();
+    }
+
     if (adv_mutex == nullptr) {
         Serial.println("WARNING: MKBLEAdvertiser::begin failed to create mutex");
         advertisingDisabled = true;
     }
 #endif
-}
 
-void MKBLEAdvertiser::connect(int connect_duration) {
+    static bool isConnecting = false;
+
+    // check that connect is not already in progress
+    if (isConnecting)
+        return;
+
     isConnected = false;
+    isConnecting = true;
 
     uint8_t payload[32];
     int payload_len = getConnectPayload(payload, sizeof(payload));
@@ -96,6 +105,7 @@ void MKBLEAdvertiser::connect(int connect_duration) {
 
     delay(connect_duration);
     isConnected = true;
+    isConnecting = false;
 
     setDataUpdated();
     update(); // update advertisement with default channel data 
@@ -214,6 +224,9 @@ void MKBLEAdvertiser::updateBLEAdvertisingState() {
 static btstack_context_callback_registration_t update_callback_registration;
 
 void MKBLEAdvertiser::updateBLEAdvertisingState() {
+
+    // BTStack requires all BT functions calls to be made only from the main thread
+    // this can be done by registering a callback which will be later called by BTStack's main thread
     update_callback_registration.callback = &btstackCallback;
     update_callback_registration.context = this;
     btstack_run_loop_execute_on_main_thread(&update_callback_registration);    
@@ -232,8 +245,12 @@ void MKBLEAdvertiser::btstackUpdateAdvertisingState() {
         bd_addr_t null_addr;
         memset(null_addr, 0, 6);
 
+        // btstack_adv_data buffer can be accessed by ESP32 outside this callback, so a copy of adv_data is needed
+        btstack_adv_data_len = adv_data_len;
+        memcpy(btstack_adv_data, adv_data, adv_data_len);
+
         gap_advertisements_set_params(32, 32, adv_type, 0, null_addr, 0x07, 0x00);
-        gap_advertisements_set_data(adv_data_len, adv_data);
+        gap_advertisements_set_data(btstack_adv_data_len, btstack_adv_data);
         gap_advertisements_enable(1);
 
         xSemaphoreGive(adv_mutex);

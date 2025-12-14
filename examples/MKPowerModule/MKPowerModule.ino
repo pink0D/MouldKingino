@@ -24,10 +24,7 @@ void setup() {
 
   NimBLEDevice::init("");
 
-  // this call just initializes the device
-  mk.begin();   
-
-  // starts sending the connection message with default duration for 1000ms
+  // send the connection message with default duration for 1000ms
   mk.connect(); 
 }
 
