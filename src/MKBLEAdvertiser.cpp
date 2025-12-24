@@ -103,7 +103,7 @@ void MKBLEAdvertiser::connect(int connect_duration) {
         startAdvertising(payload, payload_len);
     }
 
-    delay(connect_duration);
+    vTaskDelay(pdMS_TO_TICKS(connect_duration));
     isConnected = true;
     isConnecting = false;
 

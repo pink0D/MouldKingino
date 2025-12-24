@@ -17,12 +17,12 @@
 #define MODULE_2 1
 #define MODULE_3 2
 
-#define CHANNEL_A 0
-#define CHANNEL_B 1
-#define CHANNEL_C 2
-#define CHANNEL_D 3
-#define CHANNEL_E 4
-#define CHANNEL_F 5
+#define MOTOR_A 0
+#define MOTOR_B 1
+#define MOTOR_C 2
+#define MOTOR_D 3
+#define MOTOR_E 4
+#define MOTOR_F 5
 
 template<class AdvertiserClass>
 class MKModule {

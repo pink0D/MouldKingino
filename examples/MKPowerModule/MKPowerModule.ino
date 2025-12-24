@@ -34,11 +34,11 @@ void loop() {
   double v=0;
   while (v <= 1.0) {
 
-    mk.updateMotorOutput(CHANNEL_A, v);
-    mk.updateMotorOutput(CHANNEL_B, v);
-    mk.updateMotorOutput(CHANNEL_C, v);
-    mk.updateMotorOutput(CHANNEL_D, v);
-    // CHANNEL_E and CHANNEL_F are also available for MK 6.0
+    mk.updateMotorOutput(MOTOR_A, v);
+    mk.updateMotorOutput(MOTOR_B, v);
+    mk.updateMotorOutput(MOTOR_C, v);
+    mk.updateMotorOutput(MOTOR_D, v);
+    // MOTOR_E and MOTOR_F are also available for MK 6.0
 
     mk.applyUpdates(); // actually sends the updates 
     
@@ -51,11 +51,11 @@ void loop() {
   // reverse motor speed gradually
   v=0;
   while(v >= -1.0) {
-    mk.updateMotorOutput(CHANNEL_A, v);
-    mk.updateMotorOutput(CHANNEL_B, v);
-    mk.updateMotorOutput(CHANNEL_C, v);
-    mk.updateMotorOutput(CHANNEL_D, v);
-    // CHANNEL_E and CHANNEL_F are also available for MK 6.0
+    mk.updateMotorOutput(MOTOR_A, v);
+    mk.updateMotorOutput(MOTOR_B, v);
+    mk.updateMotorOutput(MOTOR_C, v);
+    mk.updateMotorOutput(MOTOR_D, v);
+    // MOTOR_E and MOTOR_F are also available for MK 6.0
 
     mk.applyUpdates(); // actually sends the updates 
     
