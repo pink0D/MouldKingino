@@ -31,6 +31,7 @@
 
 // BTStack includes
 #ifdef MK_IMPL_BTSTACK
+    #include <btstack.h>
     #include "freertos/semphr.h"
 #endif
 
@@ -40,7 +41,7 @@ class MKBLEAdvertiser {
 
         virtual void setInstanceNumber(int instanceNum) = 0;
 
-        void connect(int connect_duration);
+        void connect(int duration);
         void disconnect();
         void update();
 
@@ -68,7 +69,7 @@ class MKBLEAdvertiser {
         // module specific encrypt function
         int encryptPayload(uint8_t *payload, int payloadLen, uint8_t *destination, int maxlen);
 
-        static int advertisingCount;
+        static inline int advertisingCount = 0;
         bool advertisingDisabled = false;
 
         bool dataUpdated = false;
@@ -91,7 +92,7 @@ class MKBLEAdvertiser {
         SemaphoreHandle_t adv_mutex = nullptr;
         uint8_t btstack_adv_data[32];
         int btstack_adv_data_len;
-        static void btstackCallback(void *context);
+        btstack_context_callback_registration_t update_callback_registration;        
         void btstackUpdateAdvertisingState();
     #endif
 

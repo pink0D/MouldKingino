@@ -50,8 +50,27 @@ class MKModule {
             advertiser->begin();
         };
 
-        void connect(int connect_duration = 1000) {
-            advertiser->connect(connect_duration);
+        void connect(int duration = 1000) {
+            advertiser->connect(duration);
+        };
+
+        void connectAsync(int duration = 1000, int preDelay = 1000) {
+            
+            asyncConnectDuration = duration;
+            asyncConnectPreDelay = preDelay;
+
+            xTaskCreate( [](void* ctx) {
+
+                MKModule *obj = static_cast<MKModule*>(ctx);
+
+                if (obj->asyncConnectPreDelay > 0) {
+                    vTaskDelay(pdMS_TO_TICKS(obj->asyncConnectPreDelay));
+                }
+
+                obj->connect(obj->asyncConnectDuration);
+                vTaskDelete(NULL);
+
+            }, "MKModule::connectAsync", 2*1024, this, 0, nullptr);
         };
 
         void disconnect() {
@@ -82,6 +101,8 @@ class MKModule {
     private:
         int instanceNum = 0;
         bool immediateUpdate = false;
+        int asyncConnectDuration = 0;
+        int asyncConnectPreDelay = 0;
         AdvertiserClass *advertiser;
 
 };

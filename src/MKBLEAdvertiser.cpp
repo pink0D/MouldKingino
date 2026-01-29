@@ -10,10 +10,6 @@
 #include "MKBLEAdvertiser.h"
 #include "MKCryptoHelper.h"
 
-#ifdef MK_IMPL_BTSTACK
-#include <btstack.h>
-#endif
-
 static const uint8_t MKSeedArray[] = 
     {
         0xC1, 
@@ -23,7 +19,7 @@ static const uint8_t MKSeedArray[] =
         0xC5, 
     };
 
- static const uint8_t MKHeaderArray[] =
+static const uint8_t MKHeaderArray[] =
     {
         0x71,   // 0x71 (113)
         0x0f,   // 0x0f (15)
@@ -56,8 +52,6 @@ int MKBLEAdvertiser::encryptPayload(uint8_t *payload, int payloadLen, uint8_t *d
     return encryptedPacketLength;
 }
 
-int MKBLEAdvertiser::advertisingCount = 0;
-
 MKBLEAdvertiser::MKBLEAdvertiser() {
 
     // NimBLE supports only one advertisement, so only one MKBLEAdvertiser can be active
@@ -69,7 +63,7 @@ MKBLEAdvertiser::MKBLEAdvertiser() {
     advertisingCount++;
 }
 
-void MKBLEAdvertiser::connect(int connect_duration) {
+void MKBLEAdvertiser::connect(int duration) {
 
     if (advertisingDisabled) {
         Serial.println("WARNING: current platform does not allow multiple BLE Advertisements");
@@ -103,7 +97,7 @@ void MKBLEAdvertiser::connect(int connect_duration) {
         startAdvertising(payload, payload_len);
     }
 
-    vTaskDelay(pdMS_TO_TICKS(connect_duration));
+    vTaskDelay(pdMS_TO_TICKS(duration));
     isConnected = true;
     isConnecting = false;
 
@@ -221,19 +215,16 @@ void MKBLEAdvertiser::updateBLEAdvertisingState() {
 
 #ifdef MK_IMPL_BTSTACK
 
-static btstack_context_callback_registration_t update_callback_registration;
-
 void MKBLEAdvertiser::updateBLEAdvertisingState() {
 
     // BTStack requires all BT functions calls to be made only from the main thread
     // this can be done by registering a callback which will be later called by BTStack's main thread
-    update_callback_registration.callback = &btstackCallback;
-    update_callback_registration.context = this;
-    btstack_run_loop_execute_on_main_thread(&update_callback_registration);    
-}
 
-void MKBLEAdvertiser::btstackCallback(void *context) {
-    static_cast<MKBLEAdvertiser*>(context)->btstackUpdateAdvertisingState();
+    update_callback_registration.context = this;
+    update_callback_registration.callback = [](void* ctx) {
+            static_cast<MKBLEAdvertiser*>(ctx)->btstackUpdateAdvertisingState();
+        };
+    btstack_run_loop_execute_on_main_thread(&update_callback_registration);    
 }
 
 void MKBLEAdvertiser::btstackUpdateAdvertisingState() {
