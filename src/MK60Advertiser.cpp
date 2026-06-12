@@ -57,7 +57,7 @@ void MK60Advertiser::resetChannels(int instance) {
     initChannelData(instance);
 }
 
-void MK60Advertiser::setChannelValue(int instance, int channel, double normalizedValue) {
+void MK60Advertiser::setChannelValue(int instance, int channel, float normalizedValue) {
 
     if ( (instance < 0) || (instance > 2) ) {
         Serial.println("WARNING: invalid instance for MK 6.0");
@@ -69,7 +69,7 @@ void MK60Advertiser::setChannelValue(int instance, int channel, double normalize
         return;
     }
 
-    int iValue = ((double) (normalizedValue * 127.0 + 128.0) );
+    int iValue = ((float) (normalizedValue * 127.0 + 128.0) );
 
     uint8_t oldValue = channelData[3+channel];
     channelData[3+channel] = (uint8_t) iValue;

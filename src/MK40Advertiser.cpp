@@ -22,11 +22,11 @@ MK40Advertiser::MK40Advertiser() {
     memcpy(channelData, MK40_Telegram_Base, sizeof(MK40_Telegram_Base));
 }
 
-void MK40Advertiser::setChannelValue(int instance, int channel, double normalizedValue) {
+void MK40Advertiser::setChannelValue(int instance, int channel, float normalizedValue) {
    
     uint8_t bValue = 0x08; // zero value by default
 
-    double abs_value = abs(normalizedValue);
+    float abs_value = abs(normalizedValue);
     if (abs_value > 0.875)
         bValue = 7;
     else if (abs_value > 0.750)

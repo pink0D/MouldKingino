@@ -26,7 +26,7 @@ class MK60Advertiser : public MKBLEAdvertiser {
 
         virtual void setInstanceNumber(int instanceNum);
 
-        virtual void setChannelValue(int instance, int channel, double normalizedValue);
+        virtual void setChannelValue(int instance, int channel, float normalizedValue);
         virtual void resetChannels(int instance);
         virtual int getChannelCount() { return 6; };
 

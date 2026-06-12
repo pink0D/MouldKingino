@@ -25,7 +25,7 @@ class MK40Advertiser : public MKBLEAdvertiser {
 
         static void releaseAdvertiser(MK40Advertiser* adv) {}; // do nothing
 
-        virtual void setChannelValue(int instance, int channel, double normalizedValue);
+        virtual void setChannelValue(int instance, int channel, float normalizedValue);
         virtual void resetChannels(int instance);
         virtual int getChannelCount() { return 4; };
 

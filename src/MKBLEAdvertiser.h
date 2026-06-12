@@ -45,7 +45,7 @@ class MKBLEAdvertiser {
         void disconnect();
         void update();
 
-        virtual void setChannelValue(int instance, int channel, double normalizedValue) = 0;
+        virtual void setChannelValue(int instance, int channel, float normalizedValue) = 0;
         virtual void resetChannels(int instance) = 0;
         virtual int getChannelCount() = 0;
 

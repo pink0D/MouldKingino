@@ -31,7 +31,7 @@ void setup() {
 void loop() {
 
   // increase motor speed gradually
-  double v=0;
+  float v=0;
   while (v <= 1.0) {
 
     mk.updateMotorOutput(MOTOR_A, v);

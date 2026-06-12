@@ -85,7 +85,7 @@ class MKModule {
             return advertiser->getChannelCount();
         };
 
-        virtual void updateMotorOutput(int channel, double normalized_value) {
+        virtual void updateMotorOutput(int channel, float normalized_value) {
             
             advertiser->setChannelValue(instanceNum, channel, normalized_value);
 
