@@ -49,6 +49,13 @@ class MKBLEAdvertiser {
         virtual void resetChannels(int instance) = 0;
         virtual int getChannelCount() = 0;
 
+        void setTxId(uint16_t txId) {
+            this->txId = txId;
+        };
+        uint16_t getTxId() {
+            return txId;
+        };
+
     protected:
         MKBLEAdvertiser();        
 
@@ -74,6 +81,9 @@ class MKBLEAdvertiser {
 
         bool dataUpdated = false;
         bool isConnected = false;
+
+        // tx id
+        uint16_t txId = 0;
 
         // raw advertisement data
         bool adv_start = false;

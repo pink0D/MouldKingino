@@ -10,6 +10,9 @@
 #include "MKBLEAdvertiser.h"
 #include "MKCryptoHelper.h"
 
+#include <esp_system.h>
+#include <esp_mac.h>
+
 static const uint8_t MKSeedArray[] = 
     {
         0xC1, 
@@ -70,6 +73,14 @@ void MKBLEAdvertiser::connect(int duration) {
         return;
     }
 
+    // set txId to last two bytes of BT MAC address if it was not set explicitly
+    if (txId == 0) {        
+        uint8_t bt_mac[6];
+        esp_read_mac(bt_mac, ESP_MAC_BT);
+
+        txId = (bt_mac[4] << 8) + bt_mac[5];
+    }
+
 #ifdef MK_IMPL_BTSTACK
     if (adv_mutex == nullptr) {
         adv_mutex = xSemaphoreCreateMutex();
@@ -92,6 +103,7 @@ void MKBLEAdvertiser::connect(int duration) {
 
     uint8_t payload[32];
     int payload_len = getConnectPayload(payload, sizeof(payload));
+    memcpy(&payload[1], &txId, 2); // copy TxId to connect telegram
 
     if (payload_len > 0) {
         startAdvertising(payload, payload_len);
@@ -116,6 +128,7 @@ void MKBLEAdvertiser::update() {
 
     uint8_t payload[32];
     int payload_len = getUpdatePayload(payload, sizeof(payload));
+    memcpy(&payload[1], &txId, 2); // copy TxId to connect telegram
     
     if (payload_len > 0) {
         startAdvertising(payload, payload_len);

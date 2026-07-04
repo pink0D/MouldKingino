@@ -42,6 +42,14 @@ class MKModule {
             this->advertiser->setInstanceNumber(instanceNum);
         };
 
+        void setTxId(uint16_t txId) {
+            advertiser->setTxId(txId);
+        };
+
+        uint16_t getTxId() {
+            return advertiser->getTxId();
+        };        
+
         void setImmediateUpdates(bool immediateUpdate) {
             this->immediateUpdate = immediateUpdate;
         };
