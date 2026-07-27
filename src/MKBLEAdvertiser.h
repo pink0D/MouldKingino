@@ -43,7 +43,7 @@ class MKBLEAdvertiser {
 
         void connect(int duration);
         void disconnect();
-        void update();
+        void update(uint32_t durationMillis = 0);
 
         virtual void setChannelValue(int instance, int channel, float normalizedValue) = 0;
         virtual void resetChannels(int instance) = 0;
@@ -52,9 +52,18 @@ class MKBLEAdvertiser {
         void setTxId(uint16_t txId) {
             this->txId = txId;
         };
+
         uint16_t getTxId() {
             return txId;
         };
+
+        void setBLEAdvertisementInterval(uint16_t adv_interval) {
+            this->adv_interval = adv_interval;
+        }
+
+        void forceBLEAdvertisementRestart(bool force) {
+            this->adv_force_restart = force;
+        }
 
     protected:
         MKBLEAdvertiser();        
@@ -70,7 +79,7 @@ class MKBLEAdvertiser {
 
     private:
         // encrypts the payload and updates BLE advertisement
-        void startAdvertising(uint8_t *payload, int payloadLen);
+        void startAdvertising(uint8_t *payload, int payloadLen, uint32_t durationMillis = 0);
         void stopAdvertising();
 
         // module specific encrypt function
@@ -89,6 +98,8 @@ class MKBLEAdvertiser {
         bool adv_start = false;
         uint8_t adv_data[32];
         int adv_data_len;
+        uint16_t adv_interval = 32;
+        bool adv_force_restart = false;
         
         // implementation specific & thread safe BLE API invocation
         void updateBLEAdvertisingState();
@@ -96,6 +107,7 @@ class MKBLEAdvertiser {
         // library specific BLE implementation
     #ifdef MK_IMPL_NIMBLE
         NimBLEAdvertisementData NimBLE_adv_data; 
+        uint32_t NimBLE_adv_duration;
     #endif
 
     #ifdef MK_IMPL_BTSTACK

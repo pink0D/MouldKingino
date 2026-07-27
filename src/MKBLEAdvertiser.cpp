@@ -122,7 +122,7 @@ void MKBLEAdvertiser::disconnect() {
     stopAdvertising();    
 }
 
-void MKBLEAdvertiser::update() {
+void MKBLEAdvertiser::update(uint32_t durationMillis) {
     if ( (!isConnected) || (!dataUpdated) )
         return;
 
@@ -131,7 +131,7 @@ void MKBLEAdvertiser::update() {
     memcpy(&payload[1], &txId, 2); // copy TxId to connect telegram
     
     if (payload_len > 0) {
-        startAdvertising(payload, payload_len);
+        startAdvertising(payload, payload_len, durationMillis);
     }
 
     dataUpdated = false;
@@ -139,7 +139,7 @@ void MKBLEAdvertiser::update() {
 
 
 // encrypts payload and updates BLE advertisement    
-void MKBLEAdvertiser::startAdvertising(uint8_t *payload, int payloadLen) {
+void MKBLEAdvertiser::startAdvertising(uint8_t *payload, int payloadLen, uint32_t durationMillis) {
 
     if ( (advertisingDisabled) || (payloadLen<=0) ) {
         return;
@@ -164,6 +164,8 @@ void MKBLEAdvertiser::startAdvertising(uint8_t *payload, int payloadLen) {
     }
 
 #ifdef MK_IMPL_NIMBLE
+    NimBLE_adv_duration = durationMillis;
+
     memcpy(&adv_data[0], &manufacturer_id, sizeof(manufacturer_id));    // company id
     memcpy(&adv_data[2], encrypted_payload, encrypted_payload_len);     // payload
 #endif
@@ -208,14 +210,18 @@ void MKBLEAdvertiser::updateBLEAdvertisingState() {
 
         NimBLEAdvertising *NimBLE_adv = NimBLEDevice::getAdvertising();   
 
+        if (adv_force_restart) {
+            NimBLE_adv->stop();
+        }
+
         NimBLE_adv_data.clearData();
         NimBLE_adv_data.setFlags(0x06);
         NimBLE_adv_data.setManufacturerData(adv_data, adv_data_len);
         
         NimBLE_adv->setAdvertisementData(NimBLE_adv_data);
-        NimBLE_adv->setAdvertisingInterval(32);
+        NimBLE_adv->setAdvertisingInterval(adv_interval);
 
-        NimBLE_adv->start();
+        NimBLE_adv->start(NimBLE_adv_duration);
 
     } else {
 
@@ -253,7 +259,7 @@ void MKBLEAdvertiser::btstackUpdateAdvertisingState() {
         btstack_adv_data_len = adv_data_len;
         memcpy(btstack_adv_data, adv_data, adv_data_len);
 
-        gap_advertisements_set_params(32, 32, adv_type, 0, null_addr, 0x07, 0x00);
+        gap_advertisements_set_params(adv_interval, adv_interval, adv_type, 0, null_addr, 0x07, 0x00);
         gap_advertisements_set_data(btstack_adv_data_len, btstack_adv_data);
         gap_advertisements_enable(1);
 
