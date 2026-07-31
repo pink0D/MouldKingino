@@ -122,16 +122,20 @@ void MKBLEAdvertiser::disconnect() {
     stopAdvertising();    
 }
 
-void MKBLEAdvertiser::update(uint32_t durationMillis) {
+void MKBLEAdvertiser::update(uint32_t durationMillis, bool forcedUpdate) {
+
+    if (forcedUpdate)
+        dataUpdated = true;
+        
     if ( (!isConnected) || (!dataUpdated) )
         return;
 
     uint8_t payload[32];
     int payload_len = getUpdatePayload(payload, sizeof(payload));
-    memcpy(&payload[1], &txId, 2); // copy TxId to connect telegram
+    memcpy(&payload[1], &txId, 2); // copy TxId to update telegram
     
     if (payload_len > 0) {
-        startAdvertising(payload, payload_len, durationMillis);
+        startAdvertising(payload, payload_len, durationMillis, forcedUpdate);
     }
 
     dataUpdated = false;
@@ -139,7 +143,7 @@ void MKBLEAdvertiser::update(uint32_t durationMillis) {
 
 
 // encrypts payload and updates BLE advertisement    
-void MKBLEAdvertiser::startAdvertising(uint8_t *payload, int payloadLen, uint32_t durationMillis) {
+void MKBLEAdvertiser::startAdvertising(uint8_t *payload, int payloadLen, uint32_t durationMillis, bool forcedUpdate) {
 
     if ( (advertisingDisabled) || (payloadLen<=0) ) {
         return;
@@ -165,6 +169,7 @@ void MKBLEAdvertiser::startAdvertising(uint8_t *payload, int payloadLen, uint32_
 
 #ifdef MK_IMPL_NIMBLE
     NimBLE_adv_duration = durationMillis;
+    NimBLE_adv_forced_update = forcedUpdate;
 
     memcpy(&adv_data[0], &manufacturer_id, sizeof(manufacturer_id));    // company id
     memcpy(&adv_data[2], encrypted_payload, encrypted_payload_len);     // payload
@@ -210,7 +215,7 @@ void MKBLEAdvertiser::updateBLEAdvertisingState() {
 
         NimBLEAdvertising *NimBLE_adv = NimBLEDevice::getAdvertising();   
 
-        if (adv_force_restart) {
+        if (NimBLE_adv_forced_update) {
             NimBLE_adv->stop();
         }
 
@@ -219,7 +224,7 @@ void MKBLEAdvertiser::updateBLEAdvertisingState() {
         NimBLE_adv_data.setManufacturerData(adv_data, adv_data_len);
         
         NimBLE_adv->setAdvertisementData(NimBLE_adv_data);
-        NimBLE_adv->setAdvertisingInterval(adv_interval);
+        NimBLE_adv->setAdvertisingInterval(32);
 
         NimBLE_adv->start(NimBLE_adv_duration);
 
@@ -259,7 +264,7 @@ void MKBLEAdvertiser::btstackUpdateAdvertisingState() {
         btstack_adv_data_len = adv_data_len;
         memcpy(btstack_adv_data, adv_data, adv_data_len);
 
-        gap_advertisements_set_params(adv_interval, adv_interval, adv_type, 0, null_addr, 0x07, 0x00);
+        gap_advertisements_set_params(32, 32, adv_type, 0, null_addr, 0x07, 0x00);
         gap_advertisements_set_data(btstack_adv_data_len, btstack_adv_data);
         gap_advertisements_enable(1);
 

@@ -54,15 +54,6 @@ class MKModule {
             this->immediateUpdate = immediateUpdate;
         };
 
-        void setBLEAdvertisementInterval(uint16_t adv_interval) {
-            advertiser->setBLEAdvertisementInterval(adv_interval);
-        }
-
-        void forceBLEAdvertisementRestart(bool force) {
-            advertiser->forceBLEAdvertisementRestart(force);
-        }
-
-
         virtual void begin() {
             advertiser->begin();
         };
@@ -94,8 +85,8 @@ class MKModule {
             advertiser->disconnect();
         };
 
-        void applyUpdates(uint32_t durationMillis = 0) {
-            advertiser->update(durationMillis);
+        void applyUpdates(uint32_t durationMillis = 0, bool forcedUpdate = false) {
+            advertiser->update(durationMillis, forcedUpdate);
         };
 
         int getChannelCount() {
