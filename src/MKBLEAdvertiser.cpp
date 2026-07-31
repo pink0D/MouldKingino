@@ -124,10 +124,7 @@ void MKBLEAdvertiser::disconnect() {
 
 void MKBLEAdvertiser::update(uint32_t durationMillis, bool forcedUpdate) {
 
-    if (forcedUpdate)
-        dataUpdated = true;
-        
-    if ( (!isConnected) || (!dataUpdated) )
+    if ( (!isConnected) || ( (!dataUpdated) && (!forcedUpdate) ) )
         return;
 
     uint8_t payload[32];
