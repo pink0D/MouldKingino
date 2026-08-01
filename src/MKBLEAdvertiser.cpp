@@ -212,6 +212,8 @@ void MKBLEAdvertiser::updateBLEAdvertisingState() {
 
         NimBLEAdvertising *NimBLE_adv = NimBLEDevice::getAdvertising();   
 
+        // trick: stop current advertisement 
+        // this allows transmitting updated payload immediately without waiting for the next advertising interval
         if (NimBLE_adv_forced_update) {
             NimBLE_adv->stop();
         }
