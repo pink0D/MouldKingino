@@ -66,6 +66,14 @@ MKBLEAdvertiser::MKBLEAdvertiser() {
     advertisingCount++;
 }
 
+MKBLEAdvertiser::~MKBLEAdvertiser() {
+
+    // revert counter if it was increased during creation
+    if (!advertisingDisabled) {
+        advertisingCount--;
+    }
+}
+
 void MKBLEAdvertiser::connect(int duration) {
 
     if (advertisingDisabled) {

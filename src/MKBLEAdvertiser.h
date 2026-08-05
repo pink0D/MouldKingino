@@ -58,7 +58,8 @@ class MKBLEAdvertiser {
         };
 
     protected:
-        MKBLEAdvertiser();        
+        MKBLEAdvertiser();
+        virtual ~MKBLEAdvertiser();
 
         // prepares unencrypted payload and returns its size
         virtual int getConnectPayload(uint8_t *outPayload, int outMaxLen) = 0;

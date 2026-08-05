@@ -24,8 +24,26 @@
 #define MOTOR_E 4
 #define MOTOR_F 5
 
+class IMKModule {
+    public:
+        virtual void setInstanceNumber(int instanceNum) = 0;
+        virtual void setTxId(uint16_t txId) = 0;
+        virtual uint16_t getTxId() = 0;
+        virtual void setImmediateUpdates(bool immediateUpdate) = 0;
+        virtual void begin() = 0;
+        virtual void connect(int duration = 1000) = 0;
+        virtual void connectAsync(int duration = 1000, int preDelay = 1000) = 0;
+        virtual void disconnect() = 0;
+        virtual int getChannelCount() = 0;
+        virtual void updateMotorOutput(int channel, float normalized_value) = 0;
+        virtual void applyUpdates(uint32_t durationMillis = 0, bool forcedUpdate = false) = 0;
+        virtual void resetChannels(uint32_t durationMillis = 0, bool forcedUpdate = false) = 0;
+
+        virtual ~IMKModule() = default; 
+};
+
 template<class AdvertiserClass>
-class MKModule {
+class MKModule : public IMKModule {
     public:
         MKModule(int instanceNum = 0, bool immediateUpdate = false) {
             this->advertiser = AdvertiserClass::getAdvertiser(instanceNum);
@@ -37,32 +55,32 @@ class MKModule {
             AdvertiserClass::releaseAdvertiser(this->advertiser);
         };
 
-        void setInstanceNumber(int instanceNum) {
+        void setInstanceNumber(int instanceNum) override {
             this->instanceNum = instanceNum;
             this->advertiser->setInstanceNumber(instanceNum);
         };
 
-        void setTxId(uint16_t txId) {
+        void setTxId(uint16_t txId) override {
             advertiser->setTxId(txId);
         };
 
-        uint16_t getTxId() {
+        uint16_t getTxId() override {
             return advertiser->getTxId();
         };        
 
-        void setImmediateUpdates(bool immediateUpdate) {
+        void setImmediateUpdates(bool immediateUpdate) override {
             this->immediateUpdate = immediateUpdate;
         };
 
-        virtual void begin() {
+        virtual void begin() override {
             advertiser->begin();
         };
 
-        void connect(int duration = 1000) {
+        void connect(int duration = 1000) override {
             advertiser->connect(duration);
         };
 
-        void connectAsync(int duration = 1000, int preDelay = 1000) {
+        void connectAsync(int duration = 1000, int preDelay = 1000) override {
             
             asyncConnectDuration = duration;
             asyncConnectPreDelay = preDelay;
@@ -81,19 +99,19 @@ class MKModule {
             }, "MKModule::connectAsync", 2*1024, this, 0, nullptr);
         };
 
-        void disconnect() {
+        void disconnect() override {
             advertiser->disconnect();
         };
 
-        void applyUpdates(uint32_t durationMillis = 0, bool forcedUpdate = false) {
+        void applyUpdates(uint32_t durationMillis = 0, bool forcedUpdate = false) override {
             advertiser->update(durationMillis, forcedUpdate);
         };
 
-        int getChannelCount() {
+        int getChannelCount() override {
             return advertiser->getChannelCount();
         };
 
-        virtual void updateMotorOutput(int channel, float normalized_value) {
+        virtual void updateMotorOutput(int channel, float normalized_value) override {
             
             advertiser->setChannelValue(instanceNum, channel, normalized_value);
 
@@ -101,9 +119,9 @@ class MKModule {
                 applyUpdates();
         };
 
-        void resetChannels() {
+        void resetChannels(uint32_t durationMillis = 0, bool forcedUpdate = false) override {
             advertiser->resetChannels(instanceNum);
-            applyUpdates();
+            applyUpdates(durationMillis, forcedUpdate);
         };        
 
     private:

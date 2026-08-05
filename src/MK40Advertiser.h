@@ -15,15 +15,30 @@
 class MK40Advertiser : public MKBLEAdvertiser {
     public:
 
-    // MK 4.0 shares one advertiser for all module instances
+        // MK 4.0 shares one advertiser for all module instances
+
+        static inline MK40Advertiser *instance = nullptr; 
+        static inline int instanceRefCount = 0;
+
         static MK40Advertiser* getAdvertiser(int instanceNum) {
           
-            // lazy initialization, so this won't prevent other advertisers being constructed
-            static MK40Advertiser instance; 
-            return &instance;
+            if (instance == nullptr) {
+                instance = new MK40Advertiser();
+            }
+
+            instanceRefCount++;
+            return instance;
         };
 
-        static void releaseAdvertiser(MK40Advertiser* adv) {}; // do nothing
+        static void releaseAdvertiser(MK40Advertiser* adv) {
+
+            instanceRefCount--;
+
+            if (instanceRefCount == 0) {
+                delete instance;
+                instance = nullptr;
+            }
+        }; 
 
         virtual void setChannelValue(int instance, int channel, float normalizedValue);
         virtual void resetChannels(int instance);
