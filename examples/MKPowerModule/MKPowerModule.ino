@@ -10,7 +10,7 @@ One ESP32 can control up to 3x MK 4.0 modules or one MK 6.0 module:
 
 MouldKing40 mk1(MODULE_1);
 MouldKing40 mk2(MODULE_2);
-MouldKing40 mk3(MODULE_2);
+MouldKing40 mk3(MODULE_3);
 
 module number can be also set for MK6.0:
 
