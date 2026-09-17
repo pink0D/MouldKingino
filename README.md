@@ -8,7 +8,33 @@ Any ESP32 board can be used: chips both with Bluetooth LE (ESP32-S3) and Bluetoo
 
 [BTstack](https://github.com/bluekitchen/btstack) is also supported for more advanced use cases (like [M5Bluepad](https://github.com/pink0D/M5Bluepad/))
 
-Only Mould King MK 4.0 (4-channel) and MK 6.0 (6-channel) can be controlled - these have Power Functions connectors and use BLE advertising packets for communication. Other clones use different protocols and are not supported.
+MouldKingino supports Mould King MK 4.0 (4-channel), MK 6.0 (6-channel), and the newer High Performance Power Module described below. These modules use BLE advertising packets for communication. Other clones may use different protocols and are not supported.
+
+### High Performance Power Module
+
+Support for the newer Mould King **High Performance Power Module** has been
+tested with the module included in **Mould King set 15075 (Robot Dog)**.
+
+The module uses a different command protocol from the MK 4.0 modules while
+reusing the same BLE advertising and encryption mechanism.
+
+Confirmed channel assignments for set 15075:
+
+- Channel 1 / Motor A: steering (left / neutral / right)
+- Channel 2 / Motor B: drive (forward / stop / reverse)
+- Channels 3 and 4: function not yet identified
+
+Drive and steering can be controlled simultaneously. The transmitter ID does
+not need to be fixed; the existing MouldKingino transmitter ID generation can
+be used.
+
+Example:
+
+    MouldKingHighPerformance car(MODULE_1, true);
+
+    car.connect(2000);
+    car.updateMotorOutput(MOTOR_B, 1.0);  // forward
+    car.updateMotorOutput(MOTOR_A, 1.0);  // left
 
 # License & credits
 - MouldKingino is open source and licensed under the MIT License
