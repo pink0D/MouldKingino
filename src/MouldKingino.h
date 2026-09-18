@@ -12,7 +12,7 @@
 
 #include "MK40Advertiser.h"
 #include "MK60Advertiser.h"
-#include "MKHPAdvertiser.h"
+#include "MK30Advertiser.h"
 
 #define MODULE_1 0
 #define MODULE_2 1
@@ -138,5 +138,6 @@ typedef MKModule<MK40Advertiser> MouldKing40;
 
 typedef MKModule<MK60Advertiser> MouldKing60;
 
-typedef MKModule<MKHPAdvertiser> MouldKingHighPerformance;
+typedef MKModule<MK30Advertiser> MouldKing30;
+
 #endif

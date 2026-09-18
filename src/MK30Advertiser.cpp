@@ -1,18 +1,18 @@
 //
-// Mould King High Performance Power Module support
+// Mould King 3.0 Module support
 //
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
-#include "MKHPAdvertiser.h"
+#include "MK30Advertiser.h"
 
 // TxId bytes (payload[1..2]) are filled by MKBLEAdvertiser::connect()/update().
 //
-// Observed High Performance protocol:
+// Observed <MK 3.0> protocol:
 // CONNECT: AA <TxId> 00 00 00 00 55
 // UPDATE : 66 <TxId> CH1 CH2 CH3 CH4 99
 //
-// Confirmed with the High Performance Power Module included in
+// Confirmed with the 3.0 Power Module included in
 // Mould King set 15075 (Robot Dog):
 // CH1: steering (0xFF left, 0x80 neutral, 0x00 right)
 // CH2: drive    (0xFF forward, 0x80 stop, 0x00 reverse)
@@ -26,39 +26,39 @@ static const uint8_t MKHP_Telegram_Base[] = {
     0x66, 0x00, 0x00, 0x80, 0x80, 0x80, 0x80, 0x99
 };
 
-MKHPAdvertiser::MKHPAdvertiser(int instanceNum) {
+MK30Advertiser::MK30Advertiser(int instanceNum) {
     setInstanceNumber(instanceNum);
 }
 
-void MKHPAdvertiser::initChannelData() {
+void MK30Advertiser::initChannelData() {
     if (sizeof(channelData) != sizeof(MKHP_Telegram_Base)) {
-        Serial.println("WARNING: invalid sizeof(channelData) for MK High Performance");
+        Serial.println("WARNING: invalid sizeof(channelData) for MK 3.0");
         return;
     }
 
     memcpy(channelData, MKHP_Telegram_Base, sizeof(MKHP_Telegram_Base));
 }
 
-void MKHPAdvertiser::setInstanceNumber(int instanceNum) {
+void MK30Advertiser::setInstanceNumber(int instanceNum) {
     // No instance-specific telegram byte has been observed for this protocol.
     // Keep the API compatible with MKModule/MKBLEAdvertiser.
     if (instanceNum != 0) {
-        Serial.println("WARNING: MK High Performance module instances > MODULE_1 are not verified");
+        Serial.println("WARNING: MK 3.0 module instances > MODULE_1 are not verified");
     }
     initChannelData();
 }
 
-void MKHPAdvertiser::resetChannels(int instance) {
+void MK30Advertiser::resetChannels(int instance) {
     (void)instance;
     initChannelData();
     setDataUpdated();
 }
 
-void MKHPAdvertiser::setChannelValue(int instance, int channel, float normalizedValue) {
+void MK30Advertiser::setChannelValue(int instance, int channel, float normalizedValue) {
     (void)instance;
 
     if ((channel < 0) || (channel > 3)) {
-        Serial.println("WARNING: invalid channel for MK High Performance");
+        Serial.println("WARNING: invalid channel for MK 3.0");
         return;
     }
 
@@ -87,7 +87,7 @@ void MKHPAdvertiser::setChannelValue(int instance, int channel, float normalized
     }
 }
 
-int MKHPAdvertiser::getConnectPayload(uint8_t *outPayload, int outMaxLen) {
+int MK30Advertiser::getConnectPayload(uint8_t *outPayload, int outMaxLen) {
     if (outMaxLen < (int)sizeof(MKHP_Telegram_Connect)) {
         return 0;
     }
@@ -96,7 +96,7 @@ int MKHPAdvertiser::getConnectPayload(uint8_t *outPayload, int outMaxLen) {
     return sizeof(MKHP_Telegram_Connect);
 }
 
-int MKHPAdvertiser::getUpdatePayload(uint8_t *outPayload, int outMaxLen) {
+int MK30Advertiser::getUpdatePayload(uint8_t *outPayload, int outMaxLen) {
     if (outMaxLen < (int)sizeof(MKHP_Telegram_Base)) {
         return 0;
     }

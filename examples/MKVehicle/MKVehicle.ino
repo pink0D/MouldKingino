@@ -1,15 +1,15 @@
 #include <NimBLEDevice.h>
 #include <MouldKingino.h>
 
-// High Performance vehicle module.
+// MK 3.0 vehicle module. Tested with the module included in Mould King set 15075 (Robot Dog)
 // immediateUpdate=true sends each changed channel state immediately.
-MouldKingHighPerformance car(MODULE_1, true);
+MouldKing30 car(MODULE_1, true);
 
 void setup() {
   Serial.begin(115200);
   NimBLEDevice::init("");
 
-  Serial.println("Mould King High Performance test");
+  Serial.println("Mould King 3.0 test");
   Serial.println("Switch module on; connecting in 5 seconds...");
   delay(5000);
 
