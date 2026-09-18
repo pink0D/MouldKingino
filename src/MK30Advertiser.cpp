@@ -18,11 +18,11 @@
 // CH2: drive    (0xFF forward, 0x80 stop, 0x00 reverse)
 // CH3/CH4: protocol channels present; physical function not yet identified.
 
-static const uint8_t MKHP_Telegram_Connect[] = {
+static const uint8_t MK30_Telegram_Connect[] = {
     0xAA, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x55
 };
 
-static const uint8_t MKHP_Telegram_Base[] = {
+static const uint8_t MK30_Telegram_Base[] = {
     0x66, 0x00, 0x00, 0x80, 0x80, 0x80, 0x80, 0x99
 };
 
@@ -31,12 +31,12 @@ MK30Advertiser::MK30Advertiser(int instanceNum) {
 }
 
 void MK30Advertiser::initChannelData() {
-    if (sizeof(channelData) != sizeof(MKHP_Telegram_Base)) {
+    if (sizeof(channelData) != sizeof(MK30_Telegram_Base)) {
         Serial.println("WARNING: invalid sizeof(channelData) for MK 3.0");
         return;
     }
 
-    memcpy(channelData, MKHP_Telegram_Base, sizeof(MKHP_Telegram_Base));
+    memcpy(channelData, MK30_Telegram_Base, sizeof(MK30_Telegram_Base));
 }
 
 void MK30Advertiser::setInstanceNumber(int instanceNum) {
@@ -88,19 +88,19 @@ void MK30Advertiser::setChannelValue(int instance, int channel, float normalized
 }
 
 int MK30Advertiser::getConnectPayload(uint8_t *outPayload, int outMaxLen) {
-    if (outMaxLen < (int)sizeof(MKHP_Telegram_Connect)) {
+    if (outMaxLen < (int)sizeof(MK30_Telegram_Connect)) {
         return 0;
     }
 
-    memcpy(outPayload, MKHP_Telegram_Connect, sizeof(MKHP_Telegram_Connect));
-    return sizeof(MKHP_Telegram_Connect);
+    memcpy(outPayload, MK30_Telegram_Connect, sizeof(MK30_Telegram_Connect));
+    return sizeof(MK30_Telegram_Connect);
 }
 
 int MK30Advertiser::getUpdatePayload(uint8_t *outPayload, int outMaxLen) {
-    if (outMaxLen < (int)sizeof(MKHP_Telegram_Base)) {
+    if (outMaxLen < (int)sizeof(MK30_Telegram_Base)) {
         return 0;
     }
 
-    memcpy(outPayload, channelData, sizeof(MKHP_Telegram_Base));
-    return sizeof(MKHP_Telegram_Base);
+    memcpy(outPayload, channelData, sizeof(MK30_Telegram_Base));
+    return sizeof(MK30_Telegram_Base);
 }
