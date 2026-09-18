@@ -61,9 +61,9 @@ MKBLEAdvertiser::MKBLEAdvertiser() {
     // this check disables any other MKBLEAdvertiser if more objects are instantiated
     if (advertisingCount > 0) {
         advertisingDisabled = true;
+    } else {
+        advertisingCount++;
     }
-
-    advertisingCount++;
 }
 
 MKBLEAdvertiser::~MKBLEAdvertiser() {
