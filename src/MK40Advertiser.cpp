@@ -50,6 +50,12 @@ void MK40Advertiser::setChannelValue(int instance, int channel, float normalized
 
 void MK40Advertiser::setChannelRawValue(int instance, int channel, uint8_t rawValue) {
 
+    // allow setting any module's channel values by addressing channel number in 0..11 range
+    if (channel > 3) {
+        instance = channel / 4;
+        channel  = channel % 4;
+    }
+
     if ( (instance < 0) || (instance > 2) ) {
         Serial.println("WARNING: invalid instance for MK 4.0");
         return;

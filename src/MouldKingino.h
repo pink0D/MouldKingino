@@ -43,7 +43,7 @@ class IMKModule {
         virtual ~IMKModule() = default; 
 };
 
-template<class AdvertiserClass>
+template<class AdvertiserClass, int channelCount = 0>
 class MKModule : public IMKModule {
     public:
         MKModule(int instanceNum = 0, bool immediateUpdate = false) {
@@ -109,6 +109,12 @@ class MKModule : public IMKModule {
         };
 
         int getChannelCount() override {
+
+            // return value if passed as template parameter
+            if (channelCount > 0) 
+                return channelCount;
+
+            // return advertiser's default channel count
             return advertiser->getChannelCount();
         };
 
@@ -134,7 +140,11 @@ class MKModule : public IMKModule {
 
 };
 
+// controls each module with a different class instance
 typedef MKModule<MK40Advertiser> MouldKing40;
+
+// controls multiple modules with a single class instance and channels 0..11
+typedef MKModule<MK40Advertiser, 12> MouldKingMulti40;
 
 typedef MKModule<MK60Advertiser> MouldKing60;
 
