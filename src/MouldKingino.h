@@ -148,6 +148,6 @@ typedef MKModule<MK40Advertiser> MouldKingMulti40;
 
 typedef MKModule<MK60Advertiser> MouldKing60;
 
-typedef MKModule<MK30Advertiser> MouldKing30;
+typedef MKModule<MK30Advertiser, 2> MouldKing30;
 
 #endif

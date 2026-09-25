@@ -23,7 +23,7 @@ class MK30Advertiser : public MKBLEAdvertiser {
         virtual void setInstanceNumber(int instanceNum);
         virtual void setChannelValue(int instance, int channel, float normalizedValue);
         virtual void resetChannels(int instance);
-        virtual int getChannelCount() { return 2; }; // possible 4 channels - not verified
+        virtual int getChannelCount() { return 4; }; // possible 4 channels - not verified
 
     protected:
         virtual int getConnectPayload(uint8_t *outPayload, int outMaxLen);
