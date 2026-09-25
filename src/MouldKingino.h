@@ -140,11 +140,11 @@ class MKModule : public IMKModule {
 
 };
 
-// controls each module with a different class instance
-typedef MKModule<MK40Advertiser> MouldKing40;
+// controls each 4-channel module with a different class instance
+typedef MKModule<MK40Advertiser, 4> MouldKing40;
 
 // controls multiple modules with a single class instance and channels 0..11
-typedef MKModule<MK40Advertiser, 12> MouldKingMulti40;
+typedef MKModule<MK40Advertiser> MouldKingMulti40;
 
 typedef MKModule<MK60Advertiser> MouldKing60;
 
